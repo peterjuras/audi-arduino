@@ -22,7 +22,9 @@ void vibrateSingle(int engine, int strength, int ms) {
 }
 
 void loop() {
-  vibrateSingle(engine1, 255, 50);
-  vibrateSingle(engine2, 255, 50);
-  vibrateSingle(engine3, 255, 50);
+  const int frequency = 100;
+  
+  vibrateSingle(engine1, 255, frequency);
+  vibrateSingle(engine2, 255, frequency);
+  vibrateSingle(engine3, 255, frequency);
 }
