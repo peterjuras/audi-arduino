@@ -76,9 +76,27 @@ void peaks(int interval) {
   delay(1000);
 }
 
-void racing(int interval) {
-  for (int i = 0; i < 600; i++) {
-    vibrateSingle(engine1, 140 + (1.15 * (i % 101)), (interval + 5 * (i / 100)));
+void racing(int interval, int speed, int initialSpeed) {
+  for (int i = initialSpeed; i < speed; i++) {
+    const float intensity = 140 + (1.15 * (i % 101));
+    vibrate(engine1, intensity, 0);
+    vibrate(engine3, intensity, interval + 5 * (i / 100));
+  }
+}
+
+void braking(int interval, int speed, int initialSpeed) {
+  for (int i = speed; i > initialSpeed; i--) {
+    const float intensity = 140 + (1.15 * (i % 101));
+    vibrate(engine1, intensity, 0);
+    vibrate(engine3, intensity, interval + 5 * (i / 100));
+  }
+}
+
+void racingSlow(int interval, int speed) {
+  for (int i = 0; i < speed; i++) {
+    const float intensity = 100 + (1.15 * (i % 100));
+    vibrate(engine1, intensity, 0);
+    vibrate(engine3, intensity, interval + 5 * (i / 100));
   }
 }
 
@@ -90,7 +108,30 @@ void startEngine() {
   vibrate(engine3, 100, 3000);
 }
 
-void loop() {
+void storyboard() {
+  delay(13500);
+
+  // Insgesamt 24150 ( = 11000)
+  startEngine(); // 3500
+  delay(7000); // 7500
+  // Jetzt sind wir bei: 24150
+  disableAllEngines();
+  racingSlow(50, 150);
+  for (int i = 0; i < 2; i++) {
+    wave(125, 255, false);
+    delay(300);
+  }
+  delay(500);
+  racing(25, 600, 550);
+  for (int i = 0; i < 2; i++) {
+    wave(125, 255, false);
+    delay(300);
+  }
+  racing(25, 600, 550);
+  braking(12, 200, 100);
+}
+
+// Notes:
 //  wave(500, 125, false);
 //  wave(500, 125, true);
 //  bend(200, 3000, false);
@@ -106,5 +147,14 @@ void loop() {
 //  vibrate(engine2, 0, 0);
 //  vibrate(engine3, 0, 0);
 //  delay(2000);
-  wave(250, 255, false);
+//  wave(250, 255, false);
+
+void loop() {
+  vibrateSingle(13, 255, 1000);
+  vibrateSingle(13, 0, 500);
+  vibrateSingle(13, 255, 1000);
+  vibrateSingle(13, 0, 500);
+  vibrateSingle(13, 255, 1000);
+  vibrateSingle(13, 0, 500);
+  storyboard();
 }
