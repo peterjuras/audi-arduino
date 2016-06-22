@@ -8,6 +8,10 @@ void setup() {
   pinMode(engine3, OUTPUT);
 }
 
+void loop() {
+  vibrateSingle(3, 150, 0);
+}
+
 void vibrate(int engine,int strength, int ms) {
   analogWrite(engine, strength);
   delay(ms);
@@ -149,12 +153,12 @@ void storyboard() {
 //  delay(2000);
 //  wave(250, 255, false);
 
-void loop() {
-  vibrateSingle(13, 255, 1000);
-  vibrateSingle(13, 0, 500);
-  vibrateSingle(13, 255, 1000);
-  vibrateSingle(13, 0, 500);
-  vibrateSingle(13, 255, 1000);
-  vibrateSingle(13, 0, 500);
-  storyboard();
-}
+//void loop() {
+//  vibrateSingle(13, 255, 1000);
+//  vibrateSingle(13, 0, 500);
+//  vibrateSingle(13, 255, 1000);
+//  vibrateSingle(13, 0, 500);
+//  vibrateSingle(13, 255, 1000);
+//  vibrateSingle(13, 0, 500);
+//  storyboard();
+//}
