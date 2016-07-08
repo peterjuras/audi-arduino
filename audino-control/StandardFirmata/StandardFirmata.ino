@@ -1,3 +1,5 @@
+#include <Adafruit_NeoPixel.h>
+
 /*
   Firmata is a generic protocol for communicating with microcontrollers
   from software on a host computer. It is intended to work with
@@ -38,10 +40,362 @@
 #define I2C_RESTART_TX              0
 #define I2C_MAX_QUERIES             8
 #define I2C_REGISTER_NOT_SPECIFIED  -1
-#define TOGGLE_LED_COMMAND          0x42
+#define DECISION_MODE               B11111000
+#define AMBIENT_MODE                B11111001
+#define START_STORYBOARD            B11111011
 
 // the minimum interval for sampling analog input
 #define MINIMUM_SAMPLING_INTERVAL   1
+
+const int pinX = A0;
+const int pinY = A1;
+const int pinZ = A2;
+
+bool activated = false;
+bool decisionModeEnabled = true;
+const int ambientStripPin = 12;
+const int stickStripPin = 10;
+const int dockStripPin = 11;
+
+Adafruit_NeoPixel stickStrip = Adafruit_NeoPixel(12, stickStripPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel dockStrip = Adafruit_NeoPixel(18, dockStripPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel ambientStrip = Adafruit_NeoPixel(108, ambientStripPin, NEO_GRB + NEO_KHZ800);
+uint32_t ambientColor;
+
+const int v1 = 2;
+const int v2 = 3;
+const int v3 = 4;
+const int v4 = 5;
+const int v5 = 6;
+const int v6 = 7;
+const int v7 = 8;
+const int v8 = 9;
+const int motors[8] = {v1,v2,v3,v4,v5,v6,v7,v8};
+
+const int MOTOR_COUNT = 8;
+const float VIBRATIONS_FOR_COORDINATES[3][3][8] = {
+  {
+    { 1, 1, 1, 1, 0, 0, 0, 0 },
+    { 0, 0.5, 1, 1, 0.5, 0, 0, 0 },
+    { 0, 0, 0, 0.5, 1, 1, 0, 0 }
+  },
+  {
+    { 1, 1, 1, 1, 1, 0, 0, 0 },
+    { 0, 0.5, 1, 1, 0.5, 0, 0.5, 1 },
+    { 0, 0, 0, 0.5, 1, 1, 0, 0 }
+  },
+  {
+    { 1, 1, 1, 0, 0, 0, 0, 1 },
+    { 0, 0.5, 1, 0, 0, 0, 0.5, 1 },
+    { 0, 0, 0, 0.5, 0, 0, 1, 1 }
+  }
+};
+
+void storyboard() {
+  
+//  stickStrip.setPixelColor(1, 255, 0, 255);
+//  stickStrip.show();
+//    delay(1000);
+//    vibrate(v2,255,0);
+    
+//  analogWrite(13, 255);
+//  delay(1000);
+//  analogWrite(13, 0);
+//  delay(1000);
+//  analogWrite(13, 255);
+//  delay(1000);
+//  analogWrite(13, 0);
+//  delay(200);
+
+//  delay(9000);
+  startEngine();
+  // Interieur - Licht?
+  go(50, 150); // Anfahren
+  fromTo(0,0,0,1,500, 100, true); // Kurve nach links von innen
+  fromTo(1,1,1,1,1000, 100, true); // geradeaus aus Garage Frogshot
+  fromTo(0,2,1,0,500, 100, true); // Landstraße, Auto beschleunigt auf einen zu
+  fromTo(2,1,0,1,500, 100, true); // Landstraße Masterschot Schwenker von einer auf andere Seite
+  racing(25, 600, 550); // Closeup Tacho
+  fromTo(1,1,0,0,200, 100, true); // Landstraße Closeup Auto fahrt nach links aus dem Bild
+  fromTo(1,2,0,1,100, 100, true);// Auto kommt um Kurve auf Fahrer zu
+  fromTo(0,1,1,1,100, 100, true); // Closeup Auto schwenkt ein
+  fromTo(1,2,2,2,100, 100, true); // Auto hält bei Fahrer
+  circle(150,2000.0); // Text
+  logo(); // Logo
+}
+
+void setColorForStrip(Adafruit_NeoPixel & strip, uint32_t color) {
+  for (uint16_t i = 0; i < strip.numPixels(); i++) {
+    strip.setPixelColor(i, color);
+  }
+  strip.show();
+}
+
+uint32_t redOrGreen(Adafruit_NeoPixel & strip, int input) {
+  float relativeToNormal = 380 - input;
+  if (relativeToNormal < 0) {
+    relativeToNormal = 0;
+  }
+
+  float scale = (relativeToNormal / 100) * 255;
+  if (scale > 255) {
+    scale = 255;
+  }
+  return strip.Color(scale, 255 - scale, 0);
+}
+
+void decisionMode() {
+  const int sensorInput = analogRead(pinX);
+//  Serial.print("X ");
+//  Serial.println(analogRead(pinX));
+//  Serial.print("Y ");
+//  Serial.println(analogRead(pinY));
+//  Serial.print("Z ");
+//  Serial.println(analogRead(pinZ));
+//  delay(1000);
+//  const int sensorInput = 50;
+  const uint32_t color = redOrGreen(stickStrip, sensorInput);
+  setColorForStrip(stickStrip, color);
+  setColorForStrip(dockStrip, color);
+  setColorForStrip(ambientStrip, color);
+}
+
+int currentBrightness = 5;
+bool ambientUpward = true;
+void ambientMode() {
+  unsigned long currentTime = millis();
+  if (currentBrightness <= 5) {
+    ambientUpward = true;
+  } else if (currentBrightness >= 50) {
+  // } else if (currentBrightness >= 140) {
+    ambientUpward = false;
+  }
+  if (ambientUpward) {
+    currentBrightness = currentBrightness + 1;
+  } else {
+    currentBrightness = currentBrightness - 1;
+  }
+  ambientStrip.setBrightness(currentBrightness);
+  dockStrip.setBrightness(currentBrightness);
+  stickStrip.setBrightness(currentBrightness);
+  setColorForStrip(ambientStrip, ambientColor);
+  setColorForStrip(dockStrip, ambientColor);
+  setColorForStrip(stickStrip, ambientColor);
+  delayIfNecessary(20 - (millis() - currentTime));
+}
+
+
+void fromTo(int fromX, int fromY, int toX, int toY, float duration, int intensity, boolean stopMotors) {
+  float from[8], to[8];
+  getVibrationsForCoordinates(fromX, fromY, from);
+  getVibrationsForCoordinates(toX, toY, to);
+  const int STEP = 10;
+  float progress;
+  for (float i = 0; i < duration; i = i + STEP) {
+    unsigned long currentTime = millis();
+    progress = i / duration;
+    vibrateArray(from, (1.0 - progress) * intensity);
+    vibrateArray(to, progress * intensity);
+    delayIfNecessary((STEP)-(millis()/currentTime));
+  }
+  if(stopMotors) {
+    stopAllMotors();
+  }
+}
+
+void getVibrationsForCoordinates(int x, int y, float v[]) {
+  for (int i = 0; i < MOTOR_COUNT; i = i + 1) {
+    v[i] = VIBRATIONS_FOR_COORDINATES[x][y][i];
+  }
+}
+
+void go(int interval, int speed) {
+  for (int i = 0; i < speed; i++) {
+    const float intensity = 100 + (1.15 * (i % 100));
+    vibrate(v1, intensity, 0);
+    vibrate(v3, intensity, interval + 5 * (i / 100));
+  }
+}
+
+void vibrateArray(float strength[], int intensity) {
+  analogWrite(v1, strength[0]*intensity);
+  analogWrite(v2, strength[1]*intensity);
+  analogWrite(v3, strength[2]*intensity);
+  analogWrite(v4, strength[3]*intensity);
+  analogWrite(v5, strength[4]*intensity);
+  analogWrite(v6, strength[5]*intensity);
+  analogWrite(v7, strength[6]*intensity);
+  analogWrite(v8, strength[7]*intensity);
+}
+
+void logo() {
+  vibrate(v4,255,0);
+  vibrate(v5,255,0);
+  vibrate(v7,255,0);
+  vibrate(v8,255,100);
+  vibrate(v4,0,0);
+  vibrate(v5,0,0);
+  vibrate(v7,0,0);
+  vibrate(v8,0,0);
+  delay(100);
+  vibrate(v4,255,0);
+  vibrate(v5,255,0);
+  vibrate(v7,255,0);
+  vibrate(v8,255,100);
+  vibrate(v4,0,0);
+  vibrate(v5,0,0);
+  vibrate(v7,0,0);
+  vibrate(v8,0,0);
+  delay(300);
+  vibrate(v4,255,0);
+  vibrate(v5,255,0);
+  vibrate(v7,255,0);
+  vibrate(v8,255,100);
+  vibrate(v4,0,0);
+  vibrate(v5,0,0);
+  vibrate(v7,0,0);
+  vibrate(v8,0,0);
+  delay(100);
+  vibrate(v4,255,0);
+  vibrate(v5,255,0);
+  vibrate(v7,255,0);
+  vibrate(v8,255,100);
+  vibrate(v4,0,0);
+  vibrate(v5,0,0);
+  vibrate(v7,0,0);
+  vibrate(v8,0,0);
+}
+
+void vibrate(int engine, int strength, int duration) {
+  analogWrite(engine, strength);
+  int ledId =  engine - 3;
+  if(ledId < 3) {
+    stickStrip.setPixelColor(ledId + ledId, 255, 0, 255);
+  } else if (ledId == 3) {
+    stickStrip.setPixelColor(ledId + ledId, 255, 0, 255);
+    stickStrip.setPixelColor(ledId + ledId + 1 , 255, 0, 255);
+  } else {
+    stickStrip.setPixelColor(ledId + ledId + 1 , 255, 0, 255);
+  }
+  stickStrip.show();
+  delay(duration);
+  for (int i = 0; i < 12; i++) {
+    stickStrip.setPixelColor(i, 0, 0, 0);
+  }
+  stickStrip.show();
+}
+
+void turnOffAllLights () {
+  for (int i = 0; i < stickStrip.numPixels(); i++) {
+    stickStrip.setPixelColor(i, 0, 0, 0);
+  }
+  stickStrip.show();
+}
+
+void startEngine() {
+  analogWrite(v1, 200);
+  analogWrite(v3, 200);
+  lightWave(300, 0, 6, 11);
+  lightWave(300, 6, 11, 11);
+  analogWrite(v1, 100);
+  analogWrite(v2, 100);
+  analogWrite(v3, 100);
+}
+
+void lightWave(int duration, int startSieOne, int venue, int startSideTwo) {
+  for (int i = startSieOne; i < venue + 1; i++) {
+    unsigned long currentTime = millis();
+    stickStrip.setPixelColor(i, 255, 0, 255);
+    stickStrip.setPixelColor(startSideTwo - i, 255, 0, 255);
+    stickStrip.show();
+    delayIfNecessary((duration/6)-(millis()/currentTime));
+    stickStrip.setPixelColor(i, 0, 0, 0);
+    stickStrip.setPixelColor(startSideTwo - i, 0, 0, 0);
+    stickStrip.show();
+  }
+}
+
+void racing(int interval, int speed, int initialSpeed) {
+  for (int i = initialSpeed; i < speed; i++) {
+    const float intensity = 140 + (1.15 * (i % 101));
+    vibrate(v1, intensity, 0);
+    vibrate(v3, intensity, interval + 5 * (i / 100));
+  }
+}
+
+void stopAllMotors () {
+    analogWrite(v1, 0);
+    analogWrite(v2, 0);
+    analogWrite(v3, 0);
+    analogWrite(v4, 0);
+    analogWrite(v5, 0);
+    analogWrite(v6, 0);
+    analogWrite(v7, 0);
+    analogWrite(v8, 0);
+}
+
+
+void circle (int strength, float duration) {
+  for (float i = 0.0; i < stickStrip.numPixels(); i = i+1.0) {
+    unsigned long currentTime = millis();
+    stickStrip.setPixelColor(i, 255, 0, 255);
+    stickStrip.show();
+    float variableForMotorNumber = (i/12.0) * 5.0;
+    int motorNumber = variableForMotorNumber + 5;
+    analogWrite(motorNumber, strength);
+    delayIfNecessary((duration/12)-(millis()/currentTime));
+    analogWrite(motorNumber, 0);
+    turnOffAllLights();
+  }
+}
+
+void delayIfNecessary(int ms) {
+  if (ms>0) {
+    delay(ms);
+  }
+}
+
+bool customCommand(byte command) {
+  switch(command) {
+    case DECISION_MODE:
+      decisionModeEnabled = true;
+      return true;
+    case AMBIENT_MODE:
+      decisionModeEnabled = false;
+      return true;
+    case START_STORYBOARD:
+      storyboard();
+      return true;
+  }
+  return false;
+}
+
+void customSetup() {
+//  pinMode(v1, OUTPUT);
+//  pinMode(v2, OUTPUT);
+//  pinMode(v3, OUTPUT);
+//  pinMode(v4, OUTPUT);
+//  pinMode(v5, OUTPUT);
+//  pinMode(v6, OUTPUT);
+//  pinMode(v7, OUTPUT);
+//  pinMode(v8, OUTPUT);
+//  pinMode(13, OUTPUT);
+  
+  ambientStrip.begin();
+  ambientColor = ambientStrip.Color(255, 0, 255);
+
+  Serial.begin(9600);
+}
+
+void customLoop() {
+  if (decisionModeEnabled) {
+    decisionMode();
+  } else {
+    ambientMode();
+  }
+}
+
+//void delayIfNeccesary(int 
 
 
 /*==============================================================================
@@ -445,12 +799,6 @@ void reportDigitalCallback(byte port, int value)
  * SYSEX-BASED commands
  *============================================================================*/
 
-bool activated = false;
-void toggleLed() {
-  activated = !activated;
-  digitalWrite(13, activated ? LOW : HIGH);
-}
-
 void sysexCallback(byte command, byte argc, byte *argv)
 {
   byte mode;
@@ -460,10 +808,11 @@ void sysexCallback(byte command, byte argc, byte *argv)
   int slaveRegister;
   unsigned int delayTime;
 
+  if (customCommand(command)) {
+    return;
+  }
+
   switch (command) {
-    case TOGGLE_LED_COMMAND:
-      toggleLed();
-      break;
     case I2C_REQUEST:
       mode = argv[1] & I2C_READ_WRITE_MODE_MASK;
       if (argv[1] & I2C_10BIT_ADDRESS_MODE_MASK) {
@@ -779,6 +1128,8 @@ void setup()
   }
 
   systemResetCallback();  // reset to default config
+
+  customSetup();
 }
 
 /*==============================================================================
@@ -822,4 +1173,6 @@ void loop()
 #ifdef FIRMATA_SERIAL_FEATURE
   serialFeature.update();
 #endif
+
+  customLoop();
 }
