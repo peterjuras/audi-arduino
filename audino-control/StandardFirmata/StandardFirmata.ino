@@ -47,19 +47,19 @@
 // the minimum interval for sampling analog input
 #define MINIMUM_SAMPLING_INTERVAL   1
 
-const int pinX = A0;
-const int pinY = A1;
-const int pinZ = A2;
+const int pinX = A13;
+const int pinY = A14;
+const int pinZ = A15;
 
 bool activated = false;
-bool decisionModeEnabled = true;
+bool decisionModeEnabled = false;
 const int ambientStripPin = 12;
 const int stickStripPin = 10;
 const int dockStripPin = 11;
 
 Adafruit_NeoPixel stickStrip = Adafruit_NeoPixel(12, stickStripPin, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel dockStrip = Adafruit_NeoPixel(18, dockStripPin, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel ambientStrip = Adafruit_NeoPixel(108, ambientStripPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel ambientStrip = Adafruit_NeoPixel(120, ambientStripPin, NEO_GRB + NEO_KHZ800);
 uint32_t ambientColor;
 
 const int v1 = 2;
@@ -73,55 +73,64 @@ const int v8 = 9;
 const int motors[8] = {v1,v2,v3,v4,v5,v6,v7,v8};
 
 const int MOTOR_COUNT = 8;
-const float VIBRATIONS_FOR_COORDINATES[3][3][8] = {
+const float VIBRATIONS_FOR_COORDINATES[3][3][9] = {
   {
-    { 1, 1, 1, 1, 0, 0, 0, 0 },
-    { 0, 0.5, 1, 1, 0.5, 0, 0, 0 },
-    { 0, 0, 0, 0.5, 1, 1, 0, 0 }
+    { 1, 1, 1, 1, 0, 0, 0, 0, 11 },
+    { 0, 0.5, 1, 1, 0.5, 0, 0, 0, 8 },
+    { 0, 0, 0, 0.5, 1, 1, 0, 0, 5 }
   },
   {
-    { 1, 1, 1, 1, 1, 0, 0, 0 },
-    { 0, 0.5, 1, 1, 0.5, 0, 0.5, 1 },
-    { 0, 0, 0, 0.5, 1, 1, 0, 0 }
+    { 1, 1, 1, 1, 1, 0, 0, 0, 11 },
+    { 0, 0.5, 1, 1, 0.5, 0, 0.5, 1, 6 },
+    { 0, 0, 0, 0.5, 1, 1, 0, 0, 6 }
   },
   {
-    { 1, 1, 1, 0, 0, 0, 0, 1 },
-    { 0, 0.5, 1, 0, 0, 0, 0.5, 1 },
-    { 0, 0, 0, 0.5, 0, 0, 1, 1 }
+    { 1, 1, 1, 0, 0, 0, 0, 1, 0 },
+    { 0, 0.5, 1, 0, 0, 0, 0.5, 1, 3 },
+    { 0, 0, 0, 0.5, 0, 0, 1, 1, 5 }
   }
 };
 
-void storyboard() {
-  
-//  stickStrip.setPixelColor(1, 255, 0, 255);
-//  stickStrip.show();
-//    delay(1000);
-//    vibrate(v2,255,0);
-    
-//  analogWrite(13, 255);
-//  delay(1000);
-//  analogWrite(13, 0);
-//  delay(1000);
-//  analogWrite(13, 255);
-//  delay(1000);
-//  analogWrite(13, 0);
-//  delay(200);
+float normalEngines[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
+void grumble(int intensity) {
+  vibrateArray(normalEngines, intensity);
+}
 
-//  delay(9000);
+int normalize(int number) {
+  return number;
+}
+
+void storyboard() {
+  unsigned long startTime = millis();
+  stickStrip.setBrightness(50);
+  ambientStrip.setBrightness(80);
+  dockStrip.setBrightness(50);
+  setColorForStrip(ambientStrip, ambientColor);
+  setColorForStrip(dockStrip, ambientColor);
+  turnOffAllLights(true);
+  delay(normalize(9023) - (millis() - startTime));
   startEngine();
-  // Interieur - Licht?
-  go(50, 150); // Anfahren
-  fromTo(0,0,0,1,500, 100, true); // Kurve nach links von innen
-  fromTo(1,1,1,1,1000, 100, true); // geradeaus aus Garage Frogshot
-  fromTo(0,2,1,0,500, 100, true); // Landstraße, Auto beschleunigt auf einen zu
-  fromTo(2,1,0,1,500, 100, true); // Landstraße Masterschot Schwenker von einer auf andere Seite
-  racing(25, 600, 550); // Closeup Tacho
-  fromTo(1,1,0,0,200, 100, true); // Landstraße Closeup Auto fahrt nach links aus dem Bild
-  fromTo(1,2,0,1,100, 100, true);// Auto kommt um Kurve auf Fahrer zu
-  fromTo(0,1,1,1,100, 100, true); // Closeup Auto schwenkt ein
-  fromTo(1,2,2,2,100, 100, true); // Auto hält bei Fahrer
-  circle(150,2000.0); // Text
-  logo(); // Logo
+  // Bis 10:57
+  delay(normalize(10570) - (millis() - startTime));
+  grumble(50);
+  delay(normalize(14200) - (millis() - startTime));
+  go(100, 2080); // Bis 16.53
+  fromTo(v8, v4, 0, 11, 4670, 125, true); // Bis 21.20
+  
+  go(100, 3000);// Bis 24.20 
+  go(200, 1930);// Bis 26.13 nach vorne
+  fromTo(v8, v4, 0, 11, 1800, 175, true); // Bis 27.93
+  go(200, 1740); // Bis 29.67
+  grumble(50); 
+  delayIfNecessary(normalize(32270) - (millis() - startTime));// Bis 32.27
+  fromTo(v4, v8, 11, 0, 4200, 75, true); // Bis 36.47
+
+  turnOffAllLights(false);
+  delayIfNecessary(normalize(37800) - (millis() - startTime));// Bis 37.80
+  logo2(); // Logo
+//  logo(); // Logo
+  stopAllMotors();
+  delay(2500);
 }
 
 void setColorForStrip(Adafruit_NeoPixel & strip, uint32_t color) {
@@ -137,84 +146,264 @@ uint32_t redOrGreen(Adafruit_NeoPixel & strip, int input) {
     relativeToNormal = 0;
   }
 
-  float scale = (relativeToNormal / 100) * 255;
+  float scale = (relativeToNormal / 45) * 255;
   if (scale > 255) {
     scale = 255;
   }
-  return strip.Color(scale, 255 - scale, 0);
+  return strip.Color(255 - scale, scale, 0);
 }
 
+uint32_t redOrGreen2(Adafruit_NeoPixel & strip, int input) {
+  float scale = (input / 225) * 255;
+  if (scale > 255) {
+    scale = 255;
+  }
+  return strip.Color(255 - scale, scale, 0);
+}
+
+int yRead = 0;
 void decisionMode() {
-  const int sensorInput = analogRead(pinX);
+//  const int xRead = analogRead(pinX);
+  int newYRead = analogRead(pinY);
+  if (yRead == 0 || abs(newYRead - yRead) < 100) {
+    yRead = newYRead;
+  }
+//  const int zRead = analogRead(pinZ);
+
+//  const int minVal = 260;
+//  const int maxVal = 410;
+//
+//    //convert read values to degrees -90 to 90 - Needed for atan2
+//  int xAng = map(xRead, minVal, maxVal, -90, 90);
+//  int yAng = map(yRead, minVal, maxVal, -90, 90);
+//  int zAng = map(zRead, minVal, maxVal, -90, 90);
+//
+//  //Caculate 360deg values like so: atan2(-yAng, -zAng)
+//  //atan2 outputs the value of -π to π (radians)
+//  //We are then converting the radians to degrees
+//  int x = RAD_TO_DEG * (atan2(-yAng, -zAng) + PI);
+//  int y = RAD_TO_DEG * (atan2(-xAng, -zAng) + PI);
+//  int z = RAD_TO_DEG * (atan2(-yAng, -xAng) + PI);
+  
 //  Serial.print("X ");
-//  Serial.println(analogRead(pinX));
+////  Serial.println(xRead);  
 //  Serial.print("Y ");
-//  Serial.println(analogRead(pinY));
+//  Serial.println(yRead);
 //  Serial.print("Z ");
-//  Serial.println(analogRead(pinZ));
-//  delay(1000);
+//  Serial.println(zRead);
+//  delay(100);
 //  const int sensorInput = 50;
-  const uint32_t color = redOrGreen(stickStrip, sensorInput);
+  const uint32_t color = redOrGreen(stickStrip, yRead);
+  ambientStrip.setBrightness(80);
+  dockStrip.setBrightness(50);
+  stickStrip.setBrightness(80);
   setColorForStrip(stickStrip, color);
   setColorForStrip(dockStrip, color);
   setColorForStrip(ambientStrip, color);
 }
 
-int currentBrightness = 5;
+float currentBrightness = 5;
 bool ambientUpward = true;
 void ambientMode() {
   unsigned long currentTime = millis();
   if (currentBrightness <= 5) {
     ambientUpward = true;
-  } else if (currentBrightness >= 50) {
+  } else if (currentBrightness >= 80) {
   // } else if (currentBrightness >= 140) {
     ambientUpward = false;
   }
   if (ambientUpward) {
-    currentBrightness = currentBrightness + 1;
+    currentBrightness = currentBrightness + 0.5;
   } else {
-    currentBrightness = currentBrightness - 1;
+    currentBrightness = currentBrightness - 0.5;
   }
   ambientStrip.setBrightness(currentBrightness);
-  dockStrip.setBrightness(currentBrightness);
+  dockStrip.setBrightness(currentBrightness > 50 ? 50 : currentBrightness);
   stickStrip.setBrightness(currentBrightness);
+//  rainbow(ambientStrip);
+//  rainbow(dockStrip);
+  rainbow(stickStrip);
   setColorForStrip(ambientStrip, ambientColor);
   setColorForStrip(dockStrip, ambientColor);
-  setColorForStrip(stickStrip, ambientColor);
+//  setColorForStrip(stickStrip, ambientColor);
   delayIfNecessary(20 - (millis() - currentTime));
 }
 
+//void rainbow(Adafruit_NeoPixel & strip) {
+//  uint16_t i;
+//  for(i=0; i<strip.numPixels(); i++) {
+//    strip.setPixelColor(i, Wheel(strip, (i+25) & 255));
+//  }
+//  strip.show();
+//}
 
-void fromTo(int fromX, int fromY, int toX, int toY, float duration, int intensity, boolean stopMotors) {
-  float from[8], to[8];
-  getVibrationsForCoordinates(fromX, fromY, from);
-  getVibrationsForCoordinates(toX, toY, to);
-  const int STEP = 10;
-  float progress;
-  for (float i = 0; i < duration; i = i + STEP) {
-    unsigned long currentTime = millis();
-    progress = i / duration;
-    vibrateArray(from, (1.0 - progress) * intensity);
-    vibrateArray(to, progress * intensity);
-    delayIfNecessary((STEP)-(millis()/currentTime));
-  }
-  if(stopMotors) {
-    stopAllMotors();
+uint32_t getRainbowColor(int pixel, int numPixels) {
+  int third = numPixels / 3;
+  int colorStep = 255 / third;
+  if (pixel <= third) {
+    return stickStrip.Color(255 - colorStep * pixel, colorStep * pixel, 0);
+  } else if (pixel <= third * 2) {
+    return stickStrip.Color(0, 255 - colorStep * pixel, colorStep * pixel);
+  } else {
+    return stickStrip.Color(colorStep * pixel, 0, 255 - colorStep * pixel);
   }
 }
 
+void rainbow(Adafruit_NeoPixel & strip) {
+  int numPixels = strip.numPixels();
+  int half = numPixels / 2;
+  int colorStep = 255 / (numPixels / 2);
+  for (int i = 0; i < numPixels; i++) {
+      strip.setPixelColor(i, getRainbowColor(i, numPixels));
+  }
+  strip.show();
+}
+
+uint32_t Wheel(Adafruit_NeoPixel & strip, byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if(WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
+
+void fromTo(int startEngine, int stopEngine, int startPixel, int stopPixel, float duration, int intensity, boolean stopMotors) {
+ const int STEP = 10; 
+ int signum = stopPixel - startPixel >= 0 ? 1 : -1;
+ int numberOfSteps = abs(stopPixel - startPixel) + 1;
+ int stepInterval = duration/numberOfSteps;
+
+ int engineSignum = stopEngine - startEngine >= 0 ? 1 : -1;
+ int numberOfEngineSteps = abs(stopEngine - startEngine) + 1;
+ int engineStepInterval = duration / numberOfEngineSteps;
+ int numPixels = stickStrip.numPixels();
+ 
+ float progress;
+ for (float i = 0; i < duration; i = i + STEP) {
+   unsigned long currentTime = millis();
+
+   int engineIndex = startEngine + (i / engineStepInterval) * engineSignum;
+   int eng2Index = engineIndex - 1 * engineSignum;
+   int eng3Index = engineIndex - 2 * engineSignum;
+   if (engineIndex >= v4 && engineIndex <= v8) {
+      analogWrite(engineIndex, intensity);
+   }
+   if (eng2Index >= v4 && eng2Index <= v8) {
+      analogWrite(eng2Index, intensity / 2);
+   }
+   if (eng3Index >= v4 && eng3Index <= v8) {
+      analogWrite(eng3Index, 0);
+   }
+   
+   int ledIndex = startPixel + (i/stepInterval) * signum;
+   stickStrip.setPixelColor(ledIndex, getRainbowColor(ledIndex, numPixels));
+//   stickStrip.setPixelColor(ledIndex - 1 * signum, 0, 0, 0);
+   stickStrip.show();
+   delayIfNecessary((STEP)-(millis()/currentTime));
+ }
+ if(stopMotors) {
+   stopAllMotors();
+ }
+ turnOffAllLights(true);
+}
+
+//void fromTo(int fromX, int fromY, int toX, int toY, float duration, int intensity, boolean stopMotors) {
+// float from[9] = {0}, to[9] = {0};
+// getVibrationsForCoordinates(fromX, fromY, from);
+// getVibrationsForCoordinates(toX, toY, to);
+// int toLED = to[8];
+// int signum = to[8] - from[8] >= 0 ? 1 : -1;
+// int numberOfSteps = abs(to[8] - from[8]) + 1;
+// int stepInterval = duration/numberOfSteps;
+// const int STEP = 10;
+// float progress;
+// for (float i = 0; i < duration; i = i + STEP) {
+//   unsigned long currentTime = millis();
+//   progress = i / duration;
+//   vibrateArray(from, (1.0 - progress) * intensity);
+//   vibrateArray(to, progress * intensity);
+//   int ledIndex = from[8] + (i/stepInterval) * signum;
+//   stickStrip.setPixelColor(ledIndex, 255, 0, 255);
+//   stickStrip.setPixelColor(ledIndex - 1 * signum, 0, 0, 0);
+//   stickStrip.show();
+//   delayIfNecessary((STEP)-(millis()/currentTime));
+// }
+// if(stopMotors) {
+//   stopAllMotors();
+// }
+// turnOffAllLights();
+//}
+
 void getVibrationsForCoordinates(int x, int y, float v[]) {
-  for (int i = 0; i < MOTOR_COUNT; i = i + 1) {
+  for (int i = 0; i < 9; i = i + 1) {
     v[i] = VIBRATIONS_FOR_COORDINATES[x][y][i];
   }
 }
 
-void go(int interval, int speed) {
-  for (int i = 0; i < speed; i++) {
-    const float intensity = 100 + (1.15 * (i % 100));
-    vibrate(v1, intensity, 0);
-    vibrate(v3, intensity, interval + 5 * (i / 100));
-  }
+uint32_t goColor;
+void go(int intensity, int duration) {
+  unsigned long startTime = millis();
+  int numPixels = stickStrip.numPixels();
+  const float STEP = duration / 6;
+  analogWrite(v1, intensity);
+  delayIfNecessary(STEP - (millis() - startTime));
+
+  analogWrite(v1, intensity / 2);
+  analogWrite(v2, intensity);
+  delayIfNecessary(STEP * 2 - (millis() - startTime));
+
+  analogWrite(v1, 0);
+  analogWrite(v2, intensity / 2);
+  analogWrite(v3, intensity);
+  delayIfNecessary(STEP * 3 - (millis() - startTime));
+
+  
+  analogWrite(v2, 0);
+  analogWrite(v3, intensity / 2);
+  analogWrite(v4, intensity);
+  analogWrite(v8, intensity);
+  stickStrip.setPixelColor(0, getRainbowColor(0, numPixels));
+  stickStrip.setPixelColor(11, getRainbowColor(11, numPixels));
+  stickStrip.show();
+  delayIfNecessary(STEP * 4 - (millis() - startTime));
+
+  analogWrite(v3, 0);
+  analogWrite(v4, intensity / 2);
+  analogWrite(v8, intensity / 2);
+  stickStrip.setPixelColor(0, 0);
+  stickStrip.setPixelColor(11, 0);
+  
+  
+  analogWrite(v5, intensity);
+  analogWrite(v7, intensity);
+  stickStrip.setPixelColor(8, getRainbowColor(8, numPixels));
+  stickStrip.setPixelColor(3, getRainbowColor(3, numPixels));
+  stickStrip.show();
+  delayIfNecessary(STEP * 5 - (millis() - startTime));
+
+  analogWrite(v4, 0);
+  analogWrite(v8, 0);
+  analogWrite(v5, intensity / 2);
+  analogWrite(v7, intensity / 2);
+  stickStrip.setPixelColor(8, 0);
+  stickStrip.setPixelColor(3, 0);
+  
+  analogWrite(v6, intensity);
+  stickStrip.setPixelColor(5, getRainbowColor(5, numPixels));
+  stickStrip.setPixelColor(6, getRainbowColor(6, numPixels));
+  stickStrip.show();
+  delayIfNecessary(STEP * 6 - (millis() - startTime));
+  analogWrite(v5, 0);
+  analogWrite(v7, 0);
+  analogWrite(v6, 0);
+  stickStrip.setPixelColor(5, 0);
+  stickStrip.setPixelColor(6, 0);
+  stickStrip.show();
 }
 
 void vibrateArray(float strength[], int intensity) {
@@ -228,42 +417,226 @@ void vibrateArray(float strength[], int intensity) {
   analogWrite(v8, strength[7]*intensity);
 }
 
+void setAllPixels(uint32_t color, int brightness) {
+  stickStrip.setBrightness(brightness);
+  dockStrip.setBrightness(brightness);
+  ambientStrip.setBrightness(brightness);
+
+  for (int i = 0; i < ambientStrip.numPixels(); i++) {
+    if (i < stickStrip.numPixels()) {
+      stickStrip.setPixelColor(i, color);
+    }
+    if (i < dockStrip.numPixels()) {
+      dockStrip.setPixelColor(i, color);
+    }
+    ambientStrip.setPixelColor(i, color);
+  }
+
+  stickStrip.show();
+  dockStrip.show();
+  ambientStrip.show();
+}
+
 void logo() {
-  vibrate(v4,255,0);
-  vibrate(v5,255,0);
-  vibrate(v7,255,0);
-  vibrate(v8,255,100);
-  vibrate(v4,0,0);
-  vibrate(v5,0,0);
-  vibrate(v7,0,0);
-  vibrate(v8,0,0);
-  delay(100);
-  vibrate(v4,255,0);
-  vibrate(v5,255,0);
-  vibrate(v7,255,0);
-  vibrate(v8,255,100);
-  vibrate(v4,0,0);
-  vibrate(v5,0,0);
-  vibrate(v7,0,0);
-  vibrate(v8,0,0);
-  delay(300);
-  vibrate(v4,255,0);
-  vibrate(v5,255,0);
-  vibrate(v7,255,0);
-  vibrate(v8,255,100);
-  vibrate(v4,0,0);
-  vibrate(v5,0,0);
-  vibrate(v7,0,0);
-  vibrate(v8,0,0);
-  delay(100);
-  vibrate(v4,255,0);
-  vibrate(v5,255,0);
-  vibrate(v7,255,0);
-  vibrate(v8,255,100);
-  vibrate(v4,0,0);
-  vibrate(v5,0,0);
-  vibrate(v7,0,0);
-  vibrate(v8,0,0);
+  unsigned long startTime = millis();
+  uint32_t color = stickStrip.Color(255, 0, 0);
+  analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 40);
+  delayIfNecessary(25 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(50 - (millis() - startTime));
+  setAllPixels(color, 120);
+  delayIfNecessary(75 - (millis() - startTime));
+  setAllPixels(color, 160);
+  delayIfNecessary(100 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 120);
+  delayIfNecessary(125 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(150 - (millis() - startTime));
+  setAllPixels(color, 40);
+  delayIfNecessary(175 - (millis() - startTime));
+  setAllPixels(color, 0);
+  delayIfNecessary(200 - (millis() - startTime));
+  analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 40);
+  delayIfNecessary(225 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(250 - (millis() - startTime));
+  setAllPixels(color, 120);
+  delayIfNecessary(275 - (millis() - startTime));
+  setAllPixels(color, 160);
+  delayIfNecessary(300 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 120);
+  delayIfNecessary(325 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(350 - (millis() - startTime));
+  setAllPixels(color, 40);
+  delayIfNecessary(375 - (millis() - startTime));
+  setAllPixels(color, 0);
+  delayIfNecessary(600 - (millis() - startTime));
+//  delayIfNecessary(200 - (millis() - startTime));
+analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 40);
+  delayIfNecessary(625 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(650 - (millis() - startTime));
+  setAllPixels(color, 120);
+  delayIfNecessary(675 - (millis() - startTime));
+  setAllPixels(color, 160);
+  delayIfNecessary(700 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 120);
+  delayIfNecessary(725 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(750 - (millis() - startTime));
+  setAllPixels(color, 40);
+  delayIfNecessary(775 - (millis() - startTime));
+  setAllPixels(color, 0);
+  delayIfNecessary(800 - (millis() - startTime));
+  analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 40);
+  delayIfNecessary(825 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(850 - (millis() - startTime));
+  setAllPixels(color, 120);
+  delayIfNecessary(875 - (millis() - startTime));
+  setAllPixels(color, 160);
+  delayIfNecessary(900 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 120);
+  delayIfNecessary(925 - (millis() - startTime));
+  setAllPixels(color, 80);
+  delayIfNecessary(950 - (millis() - startTime));
+  setAllPixels(color, 40);
+  delayIfNecessary(975 - (millis() - startTime));
+  setAllPixels(color, 0);
+}
+
+void logo2() {
+  unsigned long startTime = millis();
+  uint32_t color = stickStrip.Color(255, 0, 0);
+  analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 50);
+  delayIfNecessary(25 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(50 - (millis() - startTime));
+  setAllPixels(color, 150);
+  delayIfNecessary(75 - (millis() - startTime));
+  setAllPixels(color, 200);
+  delayIfNecessary(100 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 150);
+  delayIfNecessary(125 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(150 - (millis() - startTime));
+  setAllPixels(color, 50);
+  delayIfNecessary(175 - (millis() - startTime));
+  setAllPixels(color, 0);
+  delayIfNecessary(200 - (millis() - startTime));
+  analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 50);
+  delayIfNecessary(225 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(250 - (millis() - startTime));
+  setAllPixels(color, 150);
+  delayIfNecessary(275 - (millis() - startTime));
+  setAllPixels(color, 200);
+  delayIfNecessary(300 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 200);
+  delayIfNecessary(325 - (millis() - startTime));
+  setAllPixels(color, 150);
+  delayIfNecessary(350 - (millis() - startTime));
+  setAllPixels(color, 50);
+  delayIfNecessary(375 - (millis() - startTime));
+  setAllPixels(color, 0);
+  delayIfNecessary(600 - (millis() - startTime));
+//  delayIfNecessary(200 - (millis() - startTime));
+analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 50);
+  delayIfNecessary(625 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(650 - (millis() - startTime));
+  setAllPixels(color, 150);
+  delayIfNecessary(675 - (millis() - startTime));
+  setAllPixels(color, 200);
+  delayIfNecessary(700 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 150);
+  delayIfNecessary(725 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(750 - (millis() - startTime));
+  setAllPixels(color, 50);
+  delayIfNecessary(775 - (millis() - startTime));
+  setAllPixels(color, 0);
+  delayIfNecessary(800 - (millis() - startTime));
+  analogWrite(v4,255);
+  analogWrite(v5,255);
+  analogWrite(v7,255);
+  analogWrite(v8,255);
+  setAllPixels(color, 50);
+  delayIfNecessary(825 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(850 - (millis() - startTime));
+  setAllPixels(color, 150);
+  delayIfNecessary(875 - (millis() - startTime));
+  setAllPixels(color, 200);
+  delayIfNecessary(900 - (millis() - startTime));
+  analogWrite(v4,0);
+  analogWrite(v5,0);
+  analogWrite(v7,0);
+  analogWrite(v8,0);
+  setAllPixels(color, 150);
+  delayIfNecessary(925 - (millis() - startTime));
+  setAllPixels(color, 100);
+  delayIfNecessary(950 - (millis() - startTime));
+  setAllPixels(color, 50);
+  delayIfNecessary(975 - (millis() - startTime));
+  setAllPixels(color, 0);
 }
 
 void vibrate(int engine, int strength, int duration) {
@@ -285,7 +658,17 @@ void vibrate(int engine, int strength, int duration) {
   stickStrip.show();
 }
 
-void turnOffAllLights () {
+void turnOffAllLights (boolean onlyStrip) {
+  if (!onlyStrip) {
+    for (int i = 0; i < ambientStrip.numPixels(); i++) {
+      ambientStrip.setPixelColor(i, 0, 0, 0);
+    }
+    ambientStrip.show();
+    for (int i = 0; i < dockStrip.numPixels(); i++) {
+      dockStrip.setPixelColor(i, 0, 0, 0);
+    }
+    dockStrip.show();
+  }
   for (int i = 0; i < stickStrip.numPixels(); i++) {
     stickStrip.setPixelColor(i, 0, 0, 0);
   }
@@ -293,20 +676,18 @@ void turnOffAllLights () {
 }
 
 void startEngine() {
-  analogWrite(v1, 200);
-  analogWrite(v3, 200);
+  analogWrite(v1, 125);
+  analogWrite(v3, 125);
   lightWave(300, 0, 6, 11);
   lightWave(300, 6, 11, 11);
-  analogWrite(v1, 100);
-  analogWrite(v2, 100);
-  analogWrite(v3, 100);
+  grumble(50);
 }
 
 void lightWave(int duration, int startSieOne, int venue, int startSideTwo) {
   for (int i = startSieOne; i < venue + 1; i++) {
     unsigned long currentTime = millis();
-    stickStrip.setPixelColor(i, 255, 0, 255);
-    stickStrip.setPixelColor(startSideTwo - i, 255, 0, 255);
+    stickStrip.setPixelColor(i, getRainbowColor(i, stickStrip.numPixels()));
+    stickStrip.setPixelColor(startSideTwo - i, getRainbowColor(startSideTwo - i, stickStrip.numPixels()));
     stickStrip.show();
     delayIfNecessary((duration/6)-(millis()/currentTime));
     stickStrip.setPixelColor(i, 0, 0, 0);
@@ -345,7 +726,7 @@ void circle (int strength, float duration) {
     analogWrite(motorNumber, strength);
     delayIfNecessary((duration/12)-(millis()/currentTime));
     analogWrite(motorNumber, 0);
-    turnOffAllLights();
+    turnOffAllLights(true);
   }
 }
 
@@ -380,11 +761,20 @@ void customSetup() {
 //  pinMode(v7, OUTPUT);
 //  pinMode(v8, OUTPUT);
 //  pinMode(13, OUTPUT);
+  pinMode(pinX, INPUT);
+  pinMode(pinY, INPUT);
+  pinMode(pinZ, INPUT);
   
   ambientStrip.begin();
   ambientColor = ambientStrip.Color(255, 0, 255);
 
-  Serial.begin(9600);
+  goColor = ambientStrip.Color(255, 0, 255);
+
+  ambientStrip.setBrightness(25);
+  dockStrip.setBrightness(25);
+  stickStrip.setBrightness(25);
+
+//  Serial.begin(9600);
 }
 
 void customLoop() {

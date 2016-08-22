@@ -16,6 +16,7 @@ namespace audino_control.ViewModels
         public DelegateCommand SendCommand { get; private set; }
         public DelegateCommand StartVideoDelegateCommand { get; private set; }
         public DelegateCommand ConnectCommand { get; private set; }
+        public DelegateCommand DisconnectCommand { get; private set; }
 
         public bool ArduinoAvailable
         {
@@ -29,6 +30,7 @@ namespace audino_control.ViewModels
                 SendCommand.RaiseCanExecuteChanged();
                 StartVideoDelegateCommand.RaiseCanExecuteChanged();
                 ConnectCommand.RaiseCanExecuteChanged();
+                DisconnectCommand.RaiseCanExecuteChanged();
             }
         }
 
@@ -109,6 +111,18 @@ namespace audino_control.ViewModels
             SendCommand = new DelegateCommand(SendCommandExecute, SendCommandCanExecute);
             StartVideoDelegateCommand = new DelegateCommand(StartVideoCommandExecute, SendCommandCanExecute);
             ConnectCommand = new DelegateCommand(ConnectCommandExecute, ConnectCommandCanExecute);
+            DisconnectCommand = new DelegateCommand(DisconnectCommandExecute, DisconnectCommandCanExecute);
+        }
+
+        private bool DisconnectCommandCanExecute(object arg)
+        {
+            return ArduinoAvailable;
+        }
+
+        private void DisconnectCommandExecute(object obj)
+        {
+            _firmata.finish();
+            _connection.end();
         }
 
         private bool ConnectCommandCanExecute(object arg)
